@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="ServiceHub - платформа для поиска сервисов" />
+    <title>ServiceHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .fadeIn {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+    <noscript>Для работы приложения необходимо включить JavaScript.</noscript>
+    <div id="root"></div>
+    
+    <script>
+        // Данные сервисов
+        const allServices = [
+            {
+                id: 1,
+                name: "Веб-разработка",
+                description: "Создание современных веб-сайтов и веб-приложений",
+                price: "от 50,000 ₽",
+                rating: 4.8,
+                avatar: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=150&h=150&fit=crop&crop=face",
+                location: "Москва",
+                fullDescription: "Профессиональная разработка веб-сайтов и веб-приложений с использованием современных технологий.",
+                features: ["Адаптивный дизайн", "SEO-оптимизация", "Интеграция с CMS", "Техническая поддержка"],
+                experience: "5+ лет",
+                projects: "150+ проектов"
+            },
+            {
+                id: 2,
+                name: "Мобильная разработка",
+                description: "Разработка iOS и Android приложений",
+                price: "от 80,000 ₽",
+                rating: 4.9,
+                avatar: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=150&h=150&fit=crop&crop=face",
+                location: "Санкт-Петербург",
+                fullDescription: "Создание нативных и кроссплатформенных мобильных приложений для iOS и Android.",
+                features: ["Нативная разработка", "Кроссплатформенные решения", "UI/UX дизайн", "Тестирование"],
+                experience: "4+ года",
+                projects: "80+ приложений"
+            },
+            {
+                id: 3,
+                name: "UI/UX Дизайн",
+                description: "Создание интуитивных интерфейсов",
+                price: "от 30,000 ₽",
+                rating: 4.7,
+                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+                location: "Москва",
+                fullDescription: "Проектирование пользовательских интерфейсов и пользовательского опыта.",
+                features: ["Прототипирование", "Визуальный дизайн", "Пользовательские тесты", "Дизайн-системы"],
+                experience: "6+ лет",
+                projects: "200+ проектов"
+            },
+            {
+                id: 4,
+                name: "SEO-оптимизация",
+                description: "Продвижение сайтов в поисковых системах",
+                price: "от 25,000 ₽",
+                rating: 4.6,
+                avatar: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=150&h=150&fit=crop&crop=face",
+                location: "Казань",
+                fullDescription: "Комплексная SEO-оптимизация сайтов для повышения позиций в поисковых системах.",
+                features: ["Аудит сайта", "Техническая оптимизация", "Контент-маркетинг", "Аналитика"],
+                experience: "7+ лет",
+                projects: "300+ сайтов"
+            },
+            {
+                id: 5,
+                name: "Копирайтинг",
+                description: "Создание продающих текстов и контента",
+                price: "от 15,000 ₽",
+                rating: 4.8,
+                avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+                location: "Екатеринбург",
+                fullDescription: "Написание качественных текстов для сайтов, рекламных материалов и контент-маркетинга.",
+                features: ["Продающие тексты", "SEO-копирайтинг", "Контент-план", "Редактирование"],
+                experience: "3+ года",
+                projects: "500+ текстов"
+            },
+            {
+                id: 6,
+                name: "SMM-продвижение",
+                description: "Продвижение в социальных сетях",
+                price: "от 20,000 ₽",
+                rating: 4.5,
+                avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face",
+                location: "Новосибирск",
+                fullDescription: "Комплексное продвижение брендов в социальных сетях.",
+                features: ["Контент-план", "Ведение соцсетей", "Рекламные кампании", "Аналитика"],
+                experience: "4+ года",
+                projects: "100+ проектов"
+            }
+        ];
+
+        // Глобальные переменные
+        let currentUser = null;
+        let currentPage = 'home';
+
+        // Функция для получения курса Bitcoin
+        async function fetchBtcPrice() {
+            try {
+                const btcResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+                const btcData = await btcResponse.json();
+                const btcUsd = btcData.bitcoin.usd;
+                
+                const usdResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const usdData = await usdResponse.json();
+                const usdToRub = usdData.rates.RUB;
+                
+                const btcRub = (btcUsd * usdToRub).toLocaleString('ru-RU', { maximumFractionDigits: 0 });
+                const btcElement = document.getElementById('btc-price');
+                if (btcElement) {
+                    btcElement.textContent = `${btcRub} ₽`;
+                }
+            } catch (error) {
+                const btcElement = document.getElementById('btc-price');
+                if (btcElement) {
+                    btcElement.textContent = 'Ошибка загрузки';
+                }
+            }
+        }
+
+        // Функция для создания карточки сервиса
+        function createServiceCard(service) {
+            return `
+                <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <img 
+                                src="${service.avatar}" 
+                                alt="${service.name}"
+                                class="w-12 h-12 rounded-full object-cover mr-4"
+                                onerror="this.src='https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'"
+                            />
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">${service.name}</h3>
+                                <p class="text-sm text-gray-500">${service.location}</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-600 mb-4 line-clamp-2">${service.description}</p>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-lg font-bold text-gray-900">${service.price}</span>
+                            <div class="flex items-center">
+                                <span class="text-yellow-400">★</span>
+                                <span class="text-sm text-gray-600 ml-1">${service.rating}</span>
+                            </div>
+                        </div>
+                        <button 
+                            onclick="navigateToService(${service.id})"
+                            class="block w-full bg-gray-900 text-white text-center py-2 rounded-md hover:bg-gray-800 transition-colors duration-200"
+                        >
+                            Подробнее
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Функция для создания слайдера
+        function createHeroSlider() {
+            return `
+                <div class="bg-white rounded-xl shadow-lg mb-8 overflow-hidden">
+                    <div class="relative">
+                        <img 
+                            src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=400&fit=crop"
+                            alt="ServiceHub"
+                            class="w-full h-64 object-cover"
+                        />
+                        <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                            <div class="text-center text-white">
+                                <h1 class="text-4xl font-bold mb-4">Найдите лучшие сервисы</h1>
+                                <p class="text-xl mb-6">Профессионалы для вашего бизнеса</p>
+                                <button onclick="navigateToHome()" class="bg-white text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-200">
+                                    Начать поиск
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Функция для создания навигации
+        function createNavbar() {
+            const userSection = currentUser ? `
+                <div class="relative">
+                    <button onclick="toggleUserDropdown()" class="flex items-center space-x-2 text-sm text-gray-700 hover:text-gray-900">
+                        <img 
+                            src="${currentUser.avatar}" 
+                            alt="Avatar"
+                            class="w-8 h-8 rounded-full object-cover"
+                        />
+                        <span>${currentUser.username}</span>
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                            </svg>
+                            <span class="text-xs">${currentUser.balance} BTC</span>
+                        </div>
+                    </button>
+                    <div id="user-dropdown" class="hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+                        <a href="#" onclick="navigateToProfile()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Профиль</a>
+                        <a href="#" onclick="navigateToDashboard()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Панель управления</a>
+                        <button onclick="logout()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Выйти</button>
+                    </div>
+                </div>
+            ` : `
+                <div class="flex items-center space-x-4">
+                    <a href="#" onclick="navigateToLogin()" class="text-gray-700 hover:text-gray-900 text-sm">Войти</a>
+                    <a href="#" onclick="navigateToRegister()" class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors duration-200 text-sm">Регистрация</a>
+                </div>
+            `;
+
+            return `
+                <nav class="bg-white shadow-lg fixed w-full top-0 z-50">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="flex justify-between items-center h-16">
+                            <div class="flex items-center">
+                                <span onclick="navigateToHome()" class="text-xl font-bold text-gray-900 cursor-pointer">ServiceHub</span>
+                            </div>
+                            
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center text-sm text-gray-700">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                                    </svg>
+                                    <span id="btc-price">Загрузка...</span>
+                                </div>
+                                
+                                ${userSection}
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            `;
+        }
+
+        // Функция для создания главной страницы
+        function createHomePage() {
+            const servicesHTML = allServices.map(service => createServiceCard(service)).join('');
+            
+            return `
+                <div class="pt-16">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        ${createHeroSlider()}
+                        
+                        <div class="mb-8">
+                            <h2 class="text-3xl font-bold text-gray-900 mb-4">Наши сервисы</h2>
+                            <p class="text-gray-600">Выберите профессиональную услугу для вашего бизнеса</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${servicesHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Функция для создания страницы сервиса
+        function createServicePage(serviceId) {
+            const service = allServices.find(s => s.id === serviceId);
+            if (!service) {
+                return `
+                    <div class="pt-16">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                            <h1 class="text-2xl font-bold text-gray-900 mb-4">Сервис не найден</h1>
+                            <button onclick="navigateToHome()" class="bg-gray-900 text-white px-6 py-2 rounded-md hover:bg-gray-800 transition-colors duration-200">
+                                Вернуться на главную
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const featuresHTML = service.features.map(feature => `
+                <li class="flex items-center text-gray-600">
+                    <span class="text-green-500 mr-2">✓</span>
+                    ${feature}
+                </li>
+            `).join('');
+
+            return `
+                <div class="pt-16">
+                    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                            <div class="p-8">
+                                <div class="flex items-center mb-6">
+                                    <img 
+                                        src="${service.avatar}" 
+                                        alt="${service.name}"
+                                        class="w-16 h-16 rounded-full object-cover mr-6"
+                                        onerror="this.src='https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'"
+                                    />
+                                    <div>
+                                        <h1 class="text-3xl font-bold text-gray-900 mb-2">${service.name}</h1>
+                                        <p class="text-gray-600">${service.location}</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                    <div>
+                                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Описание</h2>
+                                        <p class="text-gray-600 mb-6">${service.fullDescription}</p>
+                                        
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Особенности</h3>
+                                        <ul class="space-y-2">
+                                            ${featuresHTML}
+                                        </ul>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="bg-gray-50 rounded-lg p-6">
+                                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Информация</h3>
+                                            <div class="space-y-3">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Опыт:</span>
+                                                    <span class="font-semibold">${service.experience}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Проектов:</span>
+                                                    <span class="font-semibold">${service.projects}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Рейтинг:</span>
+                                                    <span class="font-semibold">${service.rating} ★</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Стоимость:</span>
+                                                    <span class="font-semibold text-green-600">${service.price}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <button class="w-full bg-gray-900 text-white py-3 rounded-lg mt-6 hover:bg-gray-800 transition-colors duration-200">
+                                                Связаться с исполнителем
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="border-t pt-6">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Отзывы</h3>
+                                    <div class="space-y-4">
+                                        <div class="bg-gray-50 rounded-lg p-4">
+                                            <div class="flex items-center mb-2">
+                                                <span class="text-yellow-400">★★★★★</span>
+                                                <span class="ml-2 text-sm text-gray-600">Отличная работа!</span>
+                                            </div>
+                                            <p class="text-gray-600 text-sm">Очень доволен качеством работы. Рекомендую!</p>
+                                        </div>
+                                        <div class="bg-gray-50 rounded-lg p-4">
+                                            <div class="flex items-center mb-2">
+                                                <span class="text-yellow-400">★★★★★</span>
+                                                <span class="ml-2 text-sm text-gray-600">Профессионал</span>
+                                            </div>
+                                            <p class="text-gray-600 text-sm">Быстро и качественно выполнил заказ.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Функция для создания страницы входа
+        function createLoginPage() {
+            return `
+                <div class="pt-16">
+                    <div class="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
+                        <h2 class="text-2xl font-bold mb-6">Вход</h2>
+                        <form onsubmit="handleLogin(event)">
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Email</label>
+                                <input
+                                    type="email"
+                                    id="login-email"
+                                    class="w-full p-2 border border-gray-300 rounded"
+                                    placeholder="Введите email"
+                                    required
+                                />
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-gray-700 mb-2">Пароль</label>
+                                <input
+                                    type="password"
+                                    id="login-password"
+                                    class="w-full p-2 border border-gray-300 rounded"
+                                    placeholder="Введите пароль"
+                                    required
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                class="w-full bg-gray-900 text-white py-2 rounded hover:bg-gray-800 transition-colors duration-200"
+                            >
+                                Войти
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Функция для создания страницы регистрации
+        function createRegisterPage() {
+            return `
+                <div class="pt-16">
+                    <div class="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
+                        <h2 class="text-2xl font-bold mb-6">Регистрация</h2>
+                        <form onsubmit="handleRegister(event)">
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Имя</label>
+                                <input
+                                    type="text"
+                                    id="register-name"
+                                    class="w-full p-2 border border-gray-300 rounded"
+                                    placeholder="Введите имя"
+                                    required
+                                />
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Email</label>
+                                <input
+                                    type="email"
+                                    id="register-email"
+                                    class="w-full p-2 border border-gray-300 rounded"
+                                    placeholder="Введите email"
+                                    required
+                                />
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-gray-700 mb-2">Пароль</label>
+                                <input
+                                    type="password"
+                                    id="register-password"
+                                    class="w-full p-2 border border-gray-300 rounded"
+                                    placeholder="Введите пароль"
+                                    required
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                class="w-full bg-gray-900 text-white py-2 rounded hover:bg-gray-800 transition-colors duration-200"
+                            >
+                                Зарегистрироваться
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Функция для создания панели управления
+        function createDashboardPage() {
+            return `
+                <div class="pt-16">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <h1 class="text-3xl font-bold text-gray-900 mb-8">Панель управления</h1>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow-md">
+                                <h3 class="text-lg font-semibold mb-4">Мои заказы</h3>
+                                <p class="text-gray-600">У вас пока нет заказов</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-md">
+                                <h3 class="text-lg font-semibold mb-4">Баланс</h3>
+                                <p class="text-2xl font-bold text-green-600">${currentUser ? currentUser.balance : '0.005'} BTC</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-md">
+                                <h3 class="text-lg font-semibold mb-4">Настройки</h3>
+                                <p class="text-gray-600">Управление профилем</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Функция для создания страницы профиля
+        function createProfilePage() {
+            return `
+                <div class="pt-16">
+                    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <h1 class="text-3xl font-bold text-gray-900 mb-8">Профиль</h1>
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="flex items-center mb-6">
+                                <img 
+                                    src="${currentUser ? currentUser.avatar : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'}"
+                                    alt="Avatar"
+                                    class="w-16 h-16 rounded-full object-cover mr-4"
+                                />
+                                <div>
+                                    <h2 class="text-xl font-semibold">${currentUser ? currentUser.username : 'Пользователь'}</h2>
+                                    <p class="text-gray-600">user@example.com</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Имя</label>
+                                    <input type="text" class="w-full p-2 border border-gray-300 rounded" value="${currentUser ? currentUser.username : 'Пользователь'}" />
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Email</label>
+                                    <input type="email" class="w-full p-2 border border-gray-300 rounded" value="user@example.com" />
+                                </div>
+                                <button class="bg-gray-900 text-white px-6 py-2 rounded hover:bg-gray-800 transition-colors duration-200">
+                                    Сохранить изменения
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Функции навигации
+        function navigateToHome() {
+            currentPage = 'home';
+            renderApp();
+        }
+
+        function navigateToService(serviceId) {
+            currentPage = 'service';
+            window.currentServiceId = serviceId;
+            renderApp();
+        }
+
+        function navigateToLogin() {
+            currentPage = 'login';
+            renderApp();
+        }
+
+        function navigateToRegister() {
+            currentPage = 'register';
+            renderApp();
+        }
+
+        function navigateToDashboard() {
+            currentPage = 'dashboard';
+            renderApp();
+        }
+
+        function navigateToProfile() {
+            currentPage = 'profile';
+            renderApp();
+        }
+
+        // Функции аутентификации
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            // Имитация входа
+            currentUser = {
+                username: 'Пользователь',
+                avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+                balance: '0.005'
+            };
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            navigateToHome();
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            
+            // Имитация регистрации
+            currentUser = {
+                username: name,
+                avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+                balance: '0.001'
+            };
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            navigateToHome();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('user');
+            navigateToHome();
+        }
+
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('user-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Функция рендеринга приложения
+        function renderApp() {
+            const root = document.getElementById('root');
+            let content = '';
+
+            switch (currentPage) {
+                case 'home':
+                    content = createHomePage();
+                    break;
+                case 'service':
+                    content = createServicePage(window.currentServiceId);
+                    break;
+                case 'login':
+                    content = createLoginPage();
+                    break;
+                case 'register':
+                    content = createRegisterPage();
+                    break;
+                case 'dashboard':
+                    content = createDashboardPage();
+                    break;
+                case 'profile':
+                    content = createProfilePage();
+                    break;
+                default:
+                    content = createHomePage();
+            }
+
+            root.innerHTML = createNavbar() + content;
+            fetchBtcPrice();
+        }
+
+        // Инициализация приложения
+        function initApp() {
+            // Проверяем сохраненного пользователя
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+            }
+
+            // Определяем текущую страницу из URL
+            const path = window.location.pathname;
+            if (path.startsWith('/service/')) {
+                const serviceId = parseInt(path.split('/').pop());
+                currentPage = 'service';
+                window.currentServiceId = serviceId;
+            } else if (path === '/login') {
+                currentPage = 'login';
+            } else if (path === '/register') {
+                currentPage = 'register';
+            } else if (path === '/dashboard') {
+                currentPage = 'dashboard';
+            } else if (path === '/profile') {
+                currentPage = 'profile';
+            } else {
+                currentPage = 'home';
+            }
+
+            renderApp();
+            setInterval(fetchBtcPrice, 60000); // Обновляем каждую минуту
+        }
+
+        // Запускаем приложение
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html> 
